@@ -1,5 +1,7 @@
 #!/bin/bash
 # Deploy a single file to an entire fleet and log progress
+# v1.2.5 - Clay Michaels 15 March 2016
+#   Changed "Silent" flag to "Supress".
 # v1.2.4 - Clay Michaels 2 March 2016
 #   Added colorized output.
 # v1.2.3 - Clay Michaels 29 Feb 2016
@@ -41,8 +43,8 @@ do
             resume=true
             resume_log=$OPTARG
             ;;
-        s) # "Silence" - skip "Already Done" option
-            silent=true
+        s) # "Supress" - skip "Already Done" option
+            supress=true
             ;;
         \?)
             this_script=`basename "$0"`
@@ -114,7 +116,7 @@ do
     ((total_count++))
     if [[ $already_done =~ $host ]]
     then
-        if [[ $silent != true ]]
+        if [[ $supress != true ]]
         then
             echo "$host - Already done."
         fi
