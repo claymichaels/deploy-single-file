@@ -1,15 +1,22 @@
 #!/bin/bash
 # Deploy a single file to an entire fleet and log progress
+# v1.2 - Clay michaels 18 Nov 2015
+#   added -r flag to resume
+#   changed log format to include the fleet,file,location at the top
 # v1.1 - clay michaels
 #   added -p portal flag
 # v1 - clay michaels 12 Oct 2015
 
-while getopts ";d" opt
+while getopts ":d:r:" opt
 do
     case $opt in
-        d) # Check if portal flag is set
+        d) # Portal flag is set
             portal=true
             shift
+            ;;
+        r) # Resume previous deployment
+            resume=true
+            resume_log=$2
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -17,20 +24,43 @@ do
     esac
 done
 
-fleet=$1
-file_to_send=$2
-location=$3
-
-log=/home/automation/scripts/clayScripts/dev/deployment_files/log_$1_$2.log
-
-hosts=`cat /etc/hosts | grep $fleet | grep ^10. | tr -s ' ' | cut -d' ' -f2`
-date=$(date)
-
-if [ -f $log ] # log file exists
+#############################
+# Trying to parse fleet, file, location from input
+if [ "$resume" = true ]
 then
-    already_done=`cat $log`
+    # resuming
+    if [ -e $resume_log ]
+    then
+        echo "resuming $resume_log"
+        log=$resume_log
+        fleet="`head -n3 $resume_log | sed -n 1p`"
+        file_to_send="`head -n3 $resume_log | sed -n 2p`"
+        location="`head -n3 $resume_log | sed -n 3p`"
+        echo "Fleet    =$fleet"
+        echo "File     =$file_to_send"
+        echo "Location =$location"
+        already_done=`cat $log`
+    else
+        # resuming, but log does not exist
+        echo "Input file does not exist!"
+        exit 1
+    fi
 else
-    touch $log
+    # Starting a new deployment (not resuming)
+    [ $# -ne 3 ] && this_script=`basename "$0"` && printf "Missing one or more arguments! Expected one of the following patterns:\n$this_script <fleet> <file> <deployment path>\n$this_script -r <existing log file to resume>\n" && exit 1
+    echo "Starting new deployment:"
+    fleet=$1
+    file_to_send=$2
+    file_to_send_printable=${file_to_send##*/}
+    location=$3
+    log="/home/automation/scripts/clayScripts/dev/deployment_files/${fleet}_${file_to_send_printable}.log"
+    echo "Fleet    =$fleet"
+    echo "File     =$file_to_send"
+    echo "Location =$location"
+    echo "Log file =$log"
+    echo "$fleet" > $log
+    echo "$file_to_send" >> $log
+    echo "$location" >> $log
     already_done=""
 fi
 
@@ -40,6 +70,12 @@ then
     exit 1
 fi
 
+
+
+
+
+hosts=`cat /etc/hosts | grep $fleet | grep ^10. | tr -s ' ' | cut -d' ' -f2`
+date=$(date)
 
 for host in $hosts
 do
