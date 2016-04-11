@@ -1,5 +1,10 @@
 #!/bin/bash
 # Deploy a single file to an entire fleet and log progress
+# v1.2.2 - Clay Michaels 25 Feb 2016
+#   Added progress numbers e.g. "4/12 done"
+#   Known bug (found by Jason Chong) - acela.1 and .2 trigger "already done"
+#       Based on acela.1[0-9] and acela.2[0-1]
+#       RESOLVED: changed /etc/hosts to put "acela.ts02" before "acela.2"
 # v1.2.1 - Clay Michaels 23 Feb 2016
 #   updated file paths after moving out of /dev
 #   removed "CCU:" at the beginning of each output line
@@ -80,12 +85,16 @@ fi
 hosts=`cat /etc/hosts | grep $fleet | grep ^10. | tr -s ' ' | cut -d' ' -f2`
 date=$(date)
 
+success_count=0
+total_count=0
 for host in $hosts
 do
+    ((total_count++))
     echo -ne "$host"
     if [[ $already_done =~ $host ]]
     then
         echo " - Already done."
+        ((success_count++))
     else
         response=$(ping -c 1 $host)
         if [[ $response == *"100% packet loss"* ]]
@@ -112,6 +121,9 @@ do
             fi
             echo " - Done."
             echo "$date $host" >> $log
+            ((success_count++))
         fi
     fi
 done
+
+echo "Status: $success_count/$total_count"
