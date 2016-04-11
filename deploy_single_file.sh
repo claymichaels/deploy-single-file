@@ -1,5 +1,8 @@
 #!/bin/bash
 # Deploy a single file to an entire fleet and log progress
+# v1.2.1 - Clay Michaels 23 Feb 2016
+#   updated file paths after moving out of /dev
+#   removed "CCU:" at the beginning of each output line
 # v1.2 - Clay michaels 18 Nov 2015
 #   added -r flag to resume
 #   changed log format to include the fleet,file,location at the top
@@ -53,7 +56,7 @@ else
     file_to_send=$2
     file_to_send_printable=${file_to_send##*/}
     location=$3
-    log="/home/automation/scripts/clayScripts/dev/deployment_files/${fleet}_${file_to_send_printable}.log"
+    log="/home/automation/scripts/clayScripts/deployment_files/${fleet}_${file_to_send_printable}.log"
     echo "Fleet    =$fleet"
     echo "File     =$file_to_send"
     echo "Location =$location"
@@ -79,7 +82,7 @@ date=$(date)
 
 for host in $hosts
 do
-    echo -ne "CCU:$host"
+    echo -ne "$host"
     if [[ $already_done =~ $host ]]
     then
         echo " - Already done."
