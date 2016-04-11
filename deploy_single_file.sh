@@ -1,5 +1,7 @@
 #!/bin/bash
 # Deploy a single file to an entire fleet and log progress
+# v1.2.4 - Clay Michaels 2 March 2016
+#   Added colorized output.
 # v1.2.3 - Clay Michaels 29 Feb 2016
 #   Added -s option to skip output for Already Done
 # v1.2.2 - Clay Michaels 25 Feb 2016
@@ -16,6 +18,17 @@
 # v1.1 - clay michaels
 #   added -p portal flag
 # v1 - clay michaels 12 Oct 2015
+
+colorize() {
+    case $1 in
+        green)
+            echo -e "\e[92m$2\e[0m"
+            ;;
+        red)
+            echo -e "\e[91m$2\e[0m"
+            ;;
+    esac
+}
 
 while getopts ":dsr:" opt
 do
@@ -110,7 +123,7 @@ do
         response=$(ping -c 1 $host)
         if [[ $response == *"100% packet loss"* ]]
         then
-            echo "$host - Offline"
+            colorize red "$host - Offline"
             continue
         else
             if [[ $portal == true ]]
@@ -130,7 +143,7 @@ do
                     continue
                 fi
             fi
-            echo "$host - Done."
+            colorize green "$host - Done."
             echo "$date $host" >> $log
             ((success_count++))
         fi
