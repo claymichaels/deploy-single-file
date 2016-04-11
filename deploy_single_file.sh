@@ -1,5 +1,7 @@
 #!/bin/bash
 # Deploy a single file to an entire fleet and log progress
+# v1.2.3 - Clay Michaels 29 Feb 2016
+#   Added -s option to skip output for Already Done
 # v1.2.2 - Clay Michaels 25 Feb 2016
 #   Added progress numbers e.g. "4/12 done"
 #   Known bug (found by Jason Chong) - acela.1 and .2 trigger "already done"
@@ -15,19 +17,27 @@
 #   added -p portal flag
 # v1 - clay michaels 12 Oct 2015
 
-while getopts ":d:r:" opt
+while getopts ":dsr:" opt
 do
     case $opt in
-        d) # Portal flag is set
+        d) # "Portal" - deploy to portals
             portal=true
             shift
             ;;
-        r) # Resume previous deployment
+        r) # "Resume" - resume previous deployment
             resume=true
-            resume_log=$2
+            resume_log=$OPTARG
+            ;;
+        s) # "Silence" - skip "Already Done" option
+            silent=true
             ;;
         \?)
+            this_script=`basename "$0"`
             echo "Invalid option: -$OPTARG" >&2
+            echo "Expected one of the following patterns:"
+            echo "$this_script <fleet> <file> <deployment path>"
+            echo "$this_script -r <existing log file to resume>"
+            exit 1
             ;;
     esac
 done
@@ -55,7 +65,6 @@ then
     fi
 else
     # Starting a new deployment (not resuming)
-    [ $# -ne 3 ] && this_script=`basename "$0"` && printf "Missing one or more arguments! Expected one of the following patterns:\n$this_script <fleet> <file> <deployment path>\n$this_script -r <existing log file to resume>\n" && exit 1
     echo "Starting new deployment:"
     fleet=$1
     file_to_send=$2
@@ -82,7 +91,7 @@ fi
 
 
 
-hosts=`cat /etc/hosts | grep $fleet | grep ^10. | tr -s ' ' | cut -d' ' -f2`
+hosts=`cat /etc/hosts | grep $fleet | grep -vi "bench" | grep ^10. | tr -s ' ' | cut -d' ' -f2`
 date=$(date)
 
 success_count=0
@@ -90,16 +99,18 @@ total_count=0
 for host in $hosts
 do
     ((total_count++))
-    echo -ne "$host"
     if [[ $already_done =~ $host ]]
     then
-        echo " - Already done."
+        if [[ $silent != true ]]
+        then
+            echo "$host - Already done."
+        fi
         ((success_count++))
     else
         response=$(ping -c 1 $host)
         if [[ $response == *"100% packet loss"* ]]
         then
-            echo " - Offline"
+            echo "$host - Offline"
             continue
         else
             if [[ $portal == true ]]
@@ -119,7 +130,7 @@ do
                     continue
                 fi
             fi
-            echo " - Done."
+            echo "$host - Done."
             echo "$date $host" >> $log
             ((success_count++))
         fi
