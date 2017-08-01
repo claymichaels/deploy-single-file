@@ -1,5 +1,7 @@
 #!/bin/bash
 # Deploy a single file to an entire fleet and log progress
+# v1.3 - Clay Michaels 19 July 2016
+#   Made log file output to a relative path of .<logfile> to make it more portable.
 # v1.2.5 - Clay Michaels 15 March 2016
 #   Changed "Silent" flag to "Supress".
 # v1.2.4 - Clay Michaels 2 March 2016
@@ -85,7 +87,7 @@ else
     file_to_send=$2
     file_to_send_printable=${file_to_send##*/}
     location=$3
-    log="/home/automation/scripts/clayScripts/deployment_files/${fleet}_${file_to_send_printable}.log"
+    log="${fleet}_${file_to_send_printable}.log"
     echo "Fleet    =$fleet"
     echo "File     =$file_to_send"
     echo "Location =$location"
